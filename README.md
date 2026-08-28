@@ -1,16 +1,30 @@
-# React + Vite
+ส่วนที่เป็นหน้าหลักๆ อย่าง Home, UserPage, AdminPage, OwnerPage ผมจับแยกเป็น Pages หมดเลย เพราะแต่ละหน้ามันทำงานไม่เหมือนกัน
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+ส่วนพวกชิ้นส่วนย่อยๆ เช่น Navbar, ปุ่มกดต่างๆ, MemberTable (ตาราง) แล้วก็ MemberForm (ฟอร์มกรอกข้อมูล) ผมแยกมาทำเป็น Components ไว้ ข้อดีที่เห็นชัดๆ เลยคือตาราง MemberTable มันต้องใช้ทั้งในหน้า User และ Admin ผมก็แค่เรียก Component นี้ไปวาง ไม่ต้องก๊อปโค้ดตารางเดิมๆ ไปแปะซ้ำสองรอบครับ
 
-Currently, two official plugins are available:
+เรื่อง State ของแอป
+ตัว State หลักของงานนี้คือ members ครับ ผมเอาไว้เก็บข้อมูลอาเรย์ที่ดึงมาจาก API ผมเลือกเอา members ไปวางไว้ที่ตัวบนสุดอย่าง App.jsx เพราะทั้งหน้า User และ Admin มันต้องดึงข้อมูลชุดนี้ไปใช้เหมือนกัน
+นอกจากนี้ก็มีทำ loading state เอาไว้ด้วย เผื่อเวลาเน็ตช้าจะได้รู้ว่าแอปกำลังรอโหลดข้อมูลอยู่
+ส่วนในหน้าฟอร์ม (MemberForm) ก็จะมี state ย่อยของมันเอง คือ name, lastname, position พวกนี้จะคอยอัปเดตค่าตามที่คนพิมพ์เข้ามาในช่อง Input ครับ
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+การส่งข้อมูล (State Management)
+โปรเจกต์นี้ผมใช้วิธีโยนข้อมูลแบบ Passing Props ธรรมดาเลยครับ ยังไม่ได้ใช้ React Context เพราะแอปเรายังไม่ได้ใหญ่หรือซ้อนกันลึกมาก อย่างมากก็แค่ App โยนข้อมูล members ไปให้ AdminPage แล้ว AdminPage ก็โยนต่อให้ MemberTable แค่นี้เองครับ (แต่ถ้าในอนาคตแอปมันใหญ่กว่านี้แล้วต้องโยน props กันหลายทอดลึกๆ ค่อยน่าเปลี่ยนไปใช้ Context จะได้ไม่เหนื่อย)
 
-## React Compiler
+การใช้ useEffect
+ผมเอา useEffect มาใช้ในจังหวะที่เปิดแอปขึ้นมาครั้งแรกครับ พอหน้าเว็บ render ปุ๊บ ผมก็สั่งให้มันไปเรียกฟังก์ชัน fetchMembers เพื่อยิง GET ไปดึงข้อมูลจาก API พอได้ของมาก็ใช้ setMembers อัปเดต state ตัว React มันก็จะรู้แล้วว่าข้อมูลเปลี่ยน แล้วมันก็จะดึงข้อมูลคนมาโชว์ในตารางให้เอง
+ตรง useEffect ผมใส่ dependency array เป็น [] (ค่าว่าง) เอาไว้ เพราะผมอยากให้มันดึงข้อมูลแค่รอบเดียวตอนเปิดหน้าเว็บ ไม่ได้อยากให้มันรันใหม่ทุกครั้งที่มีการขยับหรืออัปเดต state อื่นๆ ครับ
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Fetch ข้อมูลโดยไม่พึ่ง useEffect ได้ไหม?
+ตอนทำก็แอบคิดครับ สรุปคือทำได้ครับ อย่างตอนที่เรากดปุ่ม Save ผมก็สั่งยิง API แบบ POST ในฟังก์ชันที่ผูกไว้ตอนกดปุ่ม (Event Handler) ได้เลย หรือตอนกดลบก็สั่ง DELETE ได้ตรงๆ ไม่จำเป็นต้องเอาไปใส่ใน useEffect ครับ เพราะพวกนี้มันทำงานตอนที่เราไป "คลิก" ไม่ใช่ทำงานตอน "เปิดหน้าเว็บ"
 
-## Expanding the ESLint configuration
+ทำไมเวลาต่อ API ต้องเป็น Asynchronous
+เวลาดึง API ยังไงก็ต้องทำเป็น Asynchronous ครับ เพราะเราไม่มีทางรู้เลยว่าเซิร์ฟเวอร์จะส่งข้อมูลกลับมาตอนไหน ถ้าเขียนแบบปกติ (Synchronous) เบราว์เซอร์มันจะค้างรอจนกว่าเซิร์ฟเวอร์จะตอบ ซึ่งคนใช้คงรำคาญแย่
+ในแอปนี้ตัว fetch มันจะคืนค่ามาเป็น Promise ผมเลยใช้พวก async/await มาครอบอีกที โค้ดมันดูเป็นระเบียบและอ่านง่ายกว่าเดิมเยอะครับ
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+React Data Flow (ข้อมูลไหลยังไง)
+พอทำแอปนี้เสร็จ ทำให้เห็นภาพชัดขึ้นเลยว่า React มันส่งข้อมูลแบบทางเดียว (One-Way Data Flow) คือตัวแม่ (Parent) จะเป็นคนเก็บ State แล้วโยนลงไปให้ตัวลูก (Child) ใช้ผ่าน Props
+ถ้าตัวลูกอยากเปลี่ยนข้อมูล มันไปแก้ตรงๆ ไม่ได้ ตัวแม่จะต้องใจดีส่ง "ฟังก์ชันสำหรับอัปเดตข้อมูล" ลงมาให้ลูกผ่าน Props ด้วย ลูกถึงจะเอาฟังก์ชันนั้นไปผูกกับปุ่มกดหรือฟอร์มเพื่อแก้ข้อมูลได้ครับ
+
+งานนี้ได้ทบทวนของจริงหลายเรื่องเลยครับ ตั้งแต่การคิด Component, โยน Props, จัดการ State, การใช้ useEffect, ผูก Event ต่างๆ, Conditional Rendering, ใช้ map รันลูปทำตาราง, filter ข้อมูล, ทำ React Router, แล้วก็เรื่องเชื่อม API (GET/POST/DELETE) ด้วยการใช้ async/await
+
+เดี๋ยวถ้าคล่องกว่านี้ สิ่งที่ผมเล็งไว้ว่าจะศึกษาเพิ่มคือพวก React Context, Custom hooks แล้วก็หาวิธีจัดการ state ในแอปที่มันสเกลใหญ่กว่านี้ครับ
